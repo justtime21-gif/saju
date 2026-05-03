@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>책사 — AI 사주 커리어 분석</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07070f;--s1:#0e0e1a;--s2:#13131e;--s3:#181826;
+  --gold:#c9a84c;--gold-l:#e8c96a;--gold-d:#6a5520;--gold-g:rgba(201,168,76,0.12);
+  --text:#e8e4d8;--tm:#6a6860;--td:#9a9688;
+  --danger:#e05c5c;--safe:#4caf82;--blue:#6a9fc0;--purple:#8b6fba;
+  --pink:#d46a9f;
+  --border:#1c1c2a;--r:3px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Serif KR',serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 100% 50% at 50% -10%,rgba(201,168,76,.07) 0%,transparent 60%);pointer-events:none;z-index:0;}
+
+.screen{position:relative;z-index:1;min-height:100vh;display:none;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* ══ INTRO ══ */
+#s-intro{align-items:center;justify-content:center;padding:48px 20px;text-align:center;}
+.intro-glyph{font-size:60px;color:var(--gold);opacity:.7;animation:float 4s ease-in-out infinite;margin-bottom:24px;line-height:1;}
+@keyframes float{0%,100%{transform:translateY(0);opacity:.7;}50%{transform:translateY(-8px);opacity:1;}}
+.eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:5px;color:var(--gold-d);text-transform:uppercase;margin-bottom:14px;}
+.intro-title{font-size:clamp(40px,12vw,60px);font-weight:900;color:var(--gold-l);letter-spacing:4px;line-height:1;margin-bottom:10px;}
+.divg{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:18px auto;}
+
+/* 요약 카드 그리드 */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:380px;margin:0 auto 28px;}
+.sum-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 12px;text-align:left;position:relative;overflow:hidden;}
+.sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);}
+.sum-icon{font-size:20px;margin-bottom:6px;}
+.sum-title{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--gold-d);text-transform:uppercase;margin-bottom:4px;}
+.sum-desc{font-size:11px;color:var(--td);line-height:1.6;font-weight:300;}
+
+.btn-main{display:inline-flex;align-items:center;gap:10px;background:transparent;border:1px solid var(--gold);color:var(--gold-l);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;padding:16px 36px;cursor:pointer;transition:all .3s;text-transform:uppercase;position:relative;overflow:hidden;}
+.btn-main::before{content:'';position:absolute;inset:0;background:var(--gold-g);transform:scaleX(0);transform-origin:left;transition:transform .3s;}
+.btn-main:hover::before,.btn-main:active::before{transform:scaleX(1);}
+.intro-note{margin-top:28px;font-family:'DM Mono',monospace;font-size:9px;color:var(--tm);letter-spacing:1px;line-height:1.8;max-width:300px;}
+
+/* ══ INPUT ══ */
+#s-input{padding:0;}
+.input-scroll{padding:44px 20px 80px;max-width:520px;width:100%;margin:0 auto;}
+.form-head{text-align:center;margin-bottom:28px;}
+.form-head h2{font-size:20px;font-weight:600;color:var(--gold-l);letter-spacing:2px;margin-bottom:6px;}
+.form-head p{font-size:12px;color:var(--tm);font-weight:300;}
+
+/* 모드 토글 */
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px;}
+.mode-btn{padding:13px;background:transparent;border:none;color:var(--tm);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.mode-btn.active{background:var(--gold-g);color:var(--gold-l);border-bottom:2px solid var(--gold);}
+
+/* 결혼 여부 토글 */
+.marital-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
+.marital-btn{padding:13px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);color:var(--tm);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:6px;}
+.marital-btn.active.married{background:rgba(212,106,159,.1);border-color:rgba(212,106,159,.4);color:var(--pink);}
+.marital-btn.active.single{background:rgba(106,159,192,.1);border-color:rgba(106,159,192,.4);color:var(--blue);}
+
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:22px 18px;margin-bottom:12px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);}
+.clabel{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold-d);text-transform:uppercase;margin-bottom:14px;}
+
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:11px;color:var(--td);font-family:'DM Mono',monospace;letter-spacing:1px;}
+.field input,.field select{background:var(--s2);border:1px solid var(--border);color:var(--text);font-family:'Noto Serif KR',serif;font-size:15px;padding:13px 14px;border-radius:var(--r);outline:none;transition:border-color .2s;-webkit-appearance:none;width:100%;}
+.field input:focus,.field select:focus{border-color:var(--gold-d);}
+.field input::placeholder{color:var(--tm);font-size:13px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+.partner-wrap{display:none;}
+.partner-wrap.on{display:block;}
+
+/* 결혼 상태 배지 */
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;margin-bottom:12px;}
+.status-badge.married{background:rgba(212,106,159,.1);border:1px solid rgba(212,106,159,.3);color:var(--pink);}
+.status-badge.single{background:rgba(106,159,192,.1);border:1px solid rgba(106,159,192,.3);color:var(--blue);}
+
+.api-card{background:var(--s1);border:1px solid rgba(201,168,76,.2);border-radius:var(--r);padding:18px;margin-bottom:12px;}
+.api-note{font-size:11px;color:var(--tm);line-height:1.8;margin-bottom:12px;}
+.api-note a{color:var(--gold-d);}
+
+.btn-go{width:100%;padding:17px;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05));border:1px solid var(--gold);color:var(--gold-l);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:4px;cursor:pointer;transition:all .3s;text-transform:uppercase;border-radius:var(--r);}
+.btn-go:hover,.btn-go:active{background:linear-gradient(135deg,rgba(201,168,76,.25),rgba(201,168,76,.1));}
+.btn-back{background:none;border:none;color:var(--tm);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;padding:12px;display:block;margin:10px auto 0;text-transform:uppercase;}
+.err{background:rgba(224,92,92,.08);border:1px solid rgba(224,92,92,.3);padding:12px;border-radius:var(--r);font-size:12px;color:var(--danger);line-height:1.7;margin-bottom:10px;display:none;}
+
+/* ══ LOADING ══ */
+#s-load{align-items:center;justify-content:flex-start;padding:0;overflow:hidden;}
+.load-top{text-align:center;padding:36px 20px 20px;width:100%;}
+.load-glyph{font-size:48px;color:var(--gold);animation:spin 8s linear infinite;display:inline-block;margin-bottom:14px;}
+@keyframes spin{from{transform:rotate(0);}to{transform:rotate(360deg);}}
+.load-title{font-size:16px;font-weight:600;color:var(--gold-l);letter-spacing:3px;margin-bottom:8px;}
+.load-status{font-family:'DM Mono',monospace;font-size:10px;color:var(--tm);letter-spacing:2px;animation:blink 1.5s ease-in-out infinite;min-height:16px;}
+@keyframes blink{0%,100%{opacity:.4;}50%{opacity:1;}}
+.load-bar{width:200px;height:1px;background:var(--border);margin:16px auto 0;overflow:hidden;}
+.load-fill{height:100%;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:slide 2s ease-in-out infinite;transform:translateX(-100%);}
+@keyframes slide{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+
+/* 지식 카드 슬라이더 */
+.know-wrap{width:100%;max-width:480px;margin:24px auto 0;padding:0 20px 60px;flex:1;}
+.know-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.know-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold-d);text-transform:uppercase;}
+.know-dots{display:flex;gap:5px;}
+.know-dot{width:5px;height:5px;border-radius:50%;background:var(--border);transition:background .3s;}
+.know-dot.active{background:var(--gold);}
+
+.know-slider{overflow:hidden;position:relative;}
+.know-track{display:flex;transition:transform .5s cubic-bezier(.4,0,.2,1);}
+.know-card{min-width:100%;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:22px 20px;position:relative;overflow:hidden;}
+.know-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.know-card.c-saju::before{background:linear-gradient(90deg,var(--gold-d),var(--gold));}
+.know-card.c-astro::before{background:linear-gradient(90deg,var(--purple),#6a9fc0);}
+.know-card.c-subi::before{background:linear-gradient(90deg,var(--safe),#6ab0c0);}
+.know-card.c-combo::before{background:linear-gradient(90deg,var(--gold),var(--purple),var(--safe));}
+
+.kc-icon{font-size:32px;margin-bottom:12px;}
+.kc-system{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;}
+.know-card.c-saju .kc-system{color:var(--gold-d);}
+.know-card.c-astro .kc-system{color:var(--purple);}
+.know-card.c-subi .kc-system{color:var(--safe);}
+.know-card.c-combo .kc-system{color:var(--gold-d);}
+
+.kc-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:12px;line-height:1.3;}
+.kc-body{font-size:12px;color:var(--td);line-height:1.9;font-weight:300;margin-bottom:14px;}
+.kc-body strong{color:var(--text);font-weight:600;}
+
+.kc-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.kc-pill{background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:9px;color:var(--td);letter-spacing:1px;}
+.know-card.c-saju .kc-pill{border-color:rgba(201,168,76,.2);color:var(--gold-d);}
+.know-card.c-astro .kc-pill{border-color:rgba(139,111,186,.2);color:var(--purple);}
+.know-card.c-subi .kc-pill{border-color:rgba(76,175,130,.2);color:var(--safe);}
+
+.kc-point{background:rgba(201,168,76,.06);border-left:2px solid var(--gold-d);padding:10px 14px;border-radius:0 var(--r) var(--r) 0;}
+.kc-point p{font-size:12px;color:var(--text);line-height:1.7;margin:0;font-style:italic;}
+
+.know-nav{display:flex;justify-content:space-between;align-items:center;margin-top:14px;}
+.know-nav-btn{background:var(--s2);border:1px solid var(--border);color:var(--tm);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;padding:8px 16px;cursor:pointer;border-radius:var(--r);transition:all .2s;}
+.know-nav-btn:hover,.know-nav-btn:active{border-color:var(--gold-d);color:var(--gold);}
+.know-nav-btn:disabled{opacity:.3;cursor:not-allowed;}
+.know-progress{font-family:'DM Mono',monospace;font-size:9px;color:var(--tm);}
+
+/* ══ RESULT ══ */
+#s-result{padding:0;}
+.result-scroll{padding:36px 20px 80px;max-width:600px;width:100%;margin:0 auto;}
+.result-head{text-align:center;margin-bottom:28px;}
+.res-name{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:4px;color:var(--gold-d);margin-bottom:8px;}
+.res-title{font-size:clamp(20px,5vw,28px);font-weight:900;color:var(--gold-l);letter-spacing:2px;margin-bottom:6px;}
+.res-meta{font-size:10px;color:var(--tm);font-family:'DM Mono',monospace;letter-spacing:1px;line-height:1.8;}
+
+/* 요약 배너 */
+.summary-banner{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px;position:relative;overflow:hidden;}
+.summary-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold-d),var(--gold),var(--gold-d));}
+.banner-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold-d);text-transform:uppercase;margin-bottom:12px;}
+.banner-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.bscore{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:10px 8px;text-align:center;}
+.bscore-num{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--gold);line-height:1;}
+.bscore-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--tm);letter-spacing:1px;margin-top:3px;}
+.banner-oneliner{font-size:13px;color:var(--text);line-height:1.8;padding:12px 14px;background:rgba(201,168,76,.05);border-left:2px solid var(--gold-d);font-style:italic;}
+
+/* 탭 */
+.tab-bar{display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);margin-bottom:20px;-webkit-overflow-scrolling:touch;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-btn{flex-shrink:0;padding:11px 14px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--tm);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;margin-bottom:-1px;white-space:nowrap;}
+.tab-btn.active{color:var(--gold-l);border-bottom-color:var(--gold);}
+
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* 결과 카드 */
+.rcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:22px 18px;margin-bottom:12px;position:relative;}
+.rcard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);}
+.rcard h2{font-size:15px;font-weight:600;color:var(--gold-l);margin:18px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.rcard h2:first-child{margin-top:0;}
+.rcard h3{font-size:13px;font-weight:600;color:var(--text);margin:14px 0 6px;}
+.rcard p{font-size:13px;line-height:1.9;color:var(--td);margin-bottom:10px;font-weight:300;}
+.rcard strong{color:var(--text);font-weight:600;}
+.rcard em{color:var(--gold);font-style:normal;}
+.rcard ul,.rcard ol{padding-left:18px;margin-bottom:10px;}
+.rcard li{font-size:13px;line-height:1.9;color:var(--td);margin-bottom:3px;font-weight:300;}
+.rcard table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px;}
+.rcard th{background:var(--s2);color:var(--gold-d);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-weight:400;}
+.rcard td{padding:8px 10px;border-bottom:1px solid rgba(28,28,42,.5);color:var(--td);line-height:1.6;}
+.rcard tr:last-child td{border-bottom:none;}
+.rcard blockquote{border-left:2px solid var(--gold-d);padding:10px 14px;margin:12px 0;background:rgba(201,168,76,.04);}
+.rcard blockquote p{color:var(--text);font-style:italic;margin:0;}
+.rcard hr{border:none;border-top:1px solid var(--border);margin:18px 0;}
+.rcard code{font-family:'DM Mono',monospace;font-size:11px;background:var(--s2);padding:2px 5px;border-radius:2px;color:var(--gold-d);}
+
+/* 미혼 전용 — 결혼운 카드 */
+.love-card{background:rgba(212,106,159,.05);border:1px solid rgba(212,106,159,.2);border-radius:var(--r);padding:18px;margin-bottom:12px;position:relative;}
+.love-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--pink),transparent);}
+.love-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--pink);opacity:.7;text-transform:uppercase;margin-bottom:10px;}
+
+/* 기혼 전용 — 가족/금전 카드 */
+.family-card{background:rgba(76,175,130,.05);border:1px solid rgba(76,175,130,.2);border-radius:var(--r);padding:18px;margin-bottom:12px;position:relative;}
+.family-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--safe),transparent);}
+.family-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--safe);opacity:.7;text-transform:uppercase;margin-bottom:10px;}
+
+/* 차트 */
+.chart-wrap{margin:8px 0 4px;overflow:hidden;}
+canvas{display:block;width:100%!important;}
+
+/* 사계절 */
+.season-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
+.season-card{border-radius:var(--r);padding:14px 12px;border:1px solid transparent;}
+.season-card .s-icon{font-size:22px;margin-bottom:6px;}
+.season-card .s-name{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;margin-bottom:5px;text-transform:uppercase;}
+.season-card .s-years{font-size:15px;font-weight:600;margin-bottom:3px;}
+.season-card .s-age{font-size:10px;opacity:.7;margin-bottom:6px;}
+.season-card .s-desc{font-size:10px;line-height:1.7;opacity:.8;font-weight:300;}
+.season-spring{background:rgba(76,175,130,.07);border-color:rgba(76,175,130,.2);}.season-spring .s-name{color:var(--safe);}
+.season-summer{background:rgba(224,92,92,.07);border-color:rgba(224,92,92,.2);}.season-summer .s-name{color:var(--danger);}
+.season-autumn{background:rgba(201,168,76,.09);border-color:rgba(201,168,76,.3);}.season-autumn .s-name{color:var(--gold);}
+.season-winter{background:rgba(106,159,192,.07);border-color:rgba(106,159,192,.2);}.season-winter .s-name{color:var(--blue);}
+
+/* 분기 카드 */
+.quarter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
+.q-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:12px;position:relative;overflow:hidden;}
+.q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.q-card.q1::before{background:var(--blue);}
+.q-card.q2::before{background:var(--gold);}
+.q-card.q3::before{background:var(--danger);}
+.q-card.q4::before{background:var(--safe);}
+.q-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--tm);margin-bottom:5px;}
+.q-score{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;line-height:1;margin-bottom:4px;}
+.q-card.q1 .q-score{color:var(--blue);}
+.q-card.q2 .q-score{color:var(--gold);}
+.q-card.q3 .q-score{color:var(--danger);}
+.q-card.q4 .q-score{color:var(--safe);}
+.q-mode{font-size:10px;font-weight:600;letter-spacing:1px;margin-bottom:5px;}
+.q-tip{font-size:10px;color:var(--tm);line-height:1.6;font-weight:300;}
+
+.btn-reset{display:block;width:100%;padding:13px;background:transparent;border:1px solid var(--border);color:var(--tm);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;cursor:pointer;text-transform:uppercase;border-radius:var(--r);margin-top:20px;transition:all .2s;}
+.btn-reset:hover,.btn-reset:active{border-color:var(--gold-d);color:var(--gold);}
+.res-err{background:rgba(224,92,92,.08);border:1px solid rgba(224,92,92,.3);padding:12px;border-radius:var(--r);font-size:12px;color:var(--danger);line-height:1.7;margin-bottom:12px;display:none;}
+</style>
+</head>
+<body>
+
+<!-- ══ INTRO ══ -->
+<div id="s-intro" class="screen active">
+  <div class="intro-glyph">☯</div>
+  <div class="eyebrow">AI 사주 커리어 분석</div>
+  <h1 class="intro-title">책사</h1>
+  <div class="divg"></div>
+
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="sum-icon">🏆</div>
+      <div class="sum-title">커리어 황금기</div>
+      <div class="sum-desc">20~60대 정점기를 연도별로 계산해 알려드립니다</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-icon">📅</div>
+      <div class="sum-title">2026 전략</div>
+      <div class="sum-desc">공격할 분기, 버텨야 할 분기를 그래프로 보여드립니다</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-icon">🌸</div>
+      <div class="sum-title">인생 사계절</div>
+      <div class="sum-desc">봄·여름·가을·겨울 12년 단위로 지금 어느 계절인지 알려드립니다</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-icon">💑</div>
+      <div class="sum-title">결혼·가족운</div>
+      <div class="sum-desc">미혼은 결혼운, 기혼은 금전·가족운 중심으로 분석합니다</div>
+    </div>
+  </div>
+
+  <button class="btn-main" onclick="goTo('s-input')">분석 시작하기 →</button>
+  <p class="intro-note">Claude AI 기반 분석입니다.<br>중요한 결정의 유일한 근거로 사용하지 마세요.</p>
+</div>
+
+<!-- ══ INPUT ══ -->
+<div id="s-input" class="screen">
+  <div class="input-scroll">
+    <div class="form-head">
+      <h2>정보 입력</h2>
+      <p>정확할수록 분석이 정밀해집니다</p>
+    </div>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" onclick="setMode('solo',this)">개인 분석</button>
+      <button class="mode-btn" onclick="setMode('couple',this)">궁합 분석</button>
+    </div>
+
+    <div class="card">
+      <div class="clabel">본인 정보</div>
+      <div class="field"><label>이름 (선택)</label><input type="text" id="n1" placeholder="홍길동"></div>
+      <div class="field-row">
+        <div class="field"><label>생년월일 *</label><input type="date" id="b1"></div>
+        <div class="field"><label>출생 시간</label><input type="time" id="t1"></div>
+      </div>
+      <div class="field"><label>출생지</label><input type="text" id="p1" placeholder="서울, 광주, 부산 등"></div>
+      <div class="field"><label>성별</label>
+        <select id="g1"><option value="남성">남성</option><option value="여성">여성</option></select>
+      </div>
+      <div class="field">
+        <label>결혼 여부</label>
+        <div class="marital-toggle">
+          <button class="marital-btn single active" id="mb-single" onclick="setMarital('미혼',this)">💙 미혼</button>
+          <button class="marital-btn married" id="mb-married" onclick="setMarital('기혼',this)">💗 기혼</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="partner-wrap" id="pw">
+      <div class="card">
+        <div class="clabel">파트너 정보</div>
+        <div class="field"><label>이름 (선택)</label><input type="text" id="n2" placeholder="김철수"></div>
+        <div class="field-row">
+          <div class="field"><label>생년월일 *</label><input type="date" id="b2"></div>
+          <div class="field"><label>출생 시간</label><input type="time" id="t2"></div>
+        </div>
+        <div class="field"><label>출생지</label><input type="text" id="p2" placeholder="의정부, 인천 등"></div>
+        <div class="field"><label>성별</label>
+          <select id="g2"><option value="여성">여성</option><option value="남성">남성</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="clabel">분석 집중 영역</div>
+      <div class="field"><label>영역 선택</label>
+        <select id="focus">
+          <option value="전체 종합 분석">전체 종합 분석</option>
+          <option value="2026년 분기별 전략">2026년 분기별 전략</option>
+          <option value="커리어 황금기 TOP5">커리어 황금기 TOP5</option>
+          <option value="금전·재물운">금전·재물운</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- API 키 비밀번호 잠금 -->
+    <div style="background:var(--s1);border:1px solid rgba(201,168,76,.25);border-radius:var(--r);padding:20px 18px;margin-bottom:12px;position:relative;">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold-d);text-transform:uppercase;margin-bottom:10px;">🔐 관리자 전용</div>
+      <p style="font-size:11px;color:var(--tm);line-height:1.8;margin-bottom:14px;">4자리 비밀번호를 입력하면 분석이 활성화됩니다</p>
+      <input type="password" id="pin-input" maxlength="4"
+        placeholder="• • • •"
+        style="background:var(--s2);border:1px solid var(--border);color:var(--text);font-size:24px;padding:14px 16px;border-radius:var(--r);outline:none;width:100%;letter-spacing:10px;font-family:'DM Mono',monospace;text-align:center;display:block;"
+        oninput="checkPin(this.value)"
+        inputmode="numeric" pattern="[0-9]*">
+      <div id="pin-msg" style="margin-top:10px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;min-height:16px;"></div>
+    </div>
+
+    <div class="err" id="ferr"></div>
+    <button class="btn-go" onclick="startAnalysis()">분석 시작 →</button>
+    <button class="btn-back" onclick="goTo('s-intro')">← 돌아가기</button>
+  </div>
+</div>
+
+<!-- ══ LOADING ══ -->
+<div id="s-load" class="screen">
+  <!-- 상단 로딩 표시 -->
+  <div class="load-top">
+    <div class="load-glyph">⬡</div>
+    <div class="load-title">분석 중</div>
+    <div class="load-status" id="lstatus">사주 팔자 계산 중...</div>
+    <div class="load-bar"><div class="load-fill"></div></div>
+  </div>
+
+  <!-- 지식 카드 슬라이더 -->
+  <div class="know-wrap">
+    <div class="know-header">
+      <div class="know-label">분석 원리 가이드</div>
+      <div class="know-dots" id="kdots"></div>
+    </div>
+
+    <div class="know-slider">
+      <div class="know-track" id="ktrack">
+
+        <!-- 카드 1: 사주 개요 -->
+        <div class="know-card c-saju">
+          <div class="kc-icon">☯️</div>
+          <div class="kc-system">사주명리 · Four Pillars</div>
+          <div class="kc-title">사주란 무엇인가</div>
+          <div class="kc-body">사주(四柱)는 태어난 <strong>년·월·일·시</strong> 네 기둥을 뜻한다. 각 기둥은 천간(天干)과 지지(地支) 두 글자로 이루어져 <strong>8개 글자(팔자)</strong>를 만든다. 이 8자에 목·화·토·금·수(五行)의 에너지가 담겨 있으며, 그 균형과 흐름이 삶의 패턴을 결정한다고 본다.</div>
+          <div class="kc-pills">
+            <span class="kc-pill">천간 10개</span>
+            <span class="kc-pill">지지 12개</span>
+            <span class="kc-pill">오행 균형</span>
+            <span class="kc-pill">팔자 구조</span>
+          </div>
+          <div class="kc-point"><p>태어난 시간이 우주의 어떤 에너지 파동 위에 놓였는지를 기록한 개인의 에너지 지도다.</p></div>
+        </div>
+
+        <!-- 카드 2: 일간과 대운 -->
+        <div class="know-card c-saju">
+          <div class="kc-icon">🌳</div>
+          <div class="kc-system">사주명리 · 일간과 대운</div>
+          <div class="kc-title">일간이 곧 나다</div>
+          <div class="kc-body">사주의 핵심은 <strong>일간(日干)</strong> — 태어난 날의 천간이다. 甲木(갑목)이면 큰 나무, 丁火(정화)면 촛불, 己土(기토)면 논밭의 흙. 나머지 7글자는 그 나를 둘러싼 환경·관계·자원을 뜻한다. <strong>대운(大運)</strong>은 10년마다 바뀌는 큰 흐름으로, 지금 어떤 계절을 지나고 있는지를 보여준다.</div>
+          <div class="kc-pills">
+            <span class="kc-pill">甲木 — 큰 나무</span>
+            <span class="kc-pill">丙火 — 태양</span>
+            <span class="kc-pill">己土 — 논밭</span>
+            <span class="kc-pill">壬水 — 강·바다</span>
+          </div>
+          <div class="kc-point"><p>일간이 강한가 약한가, 어떤 오행이 부족한가에 따라 유리한 시기와 불리한 시기가 결정된다.</p></div>
+        </div>
+
+        <!-- 카드 3: 2026 세운 -->
+        <div class="know-card c-saju">
+          <div class="kc-icon">📅</div>
+          <div class="kc-system">사주명리 · 세운 분석</div>
+          <div class="kc-title">2026년 丙午년의 의미</div>
+          <div class="kc-body"><strong>세운(歲運)</strong>은 그 해의 천간·지지가 내 사주와 어떻게 반응하는지 보는 것이다. 2026년은 丙午(병오)년. 丙은 태양 같은 불(火), 午도 강한 火다. 내 일간이 木이라면 불이 나무를 태워 에너지를 뽑아내는 해 — 활발하지만 소진 위험. 土라면 불이 흙을 덥혀 생(生)해주는 해 — 상승 흐름.</div>
+          <div class="kc-pills">
+            <span class="kc-pill">丙火 — 태양의 불</span>
+            <span class="kc-pill">午火 — 강한 열기</span>
+            <span class="kc-pill">합·충·형·파</span>
+          </div>
+          <div class="kc-point"><p>세운은 날씨와 같다. 내 사주라는 체질에 올해 날씨가 맞는지 안 맞는지를 계산하는 것이다.</p></div>
+        </div>
+
+        <!-- 카드 4: 서양 점성술 -->
+        <div class="know-card c-astro">
+          <div class="kc-icon">⭐</div>
+          <div class="kc-system">Western Astrology · 서양 점성술</div>
+          <div class="kc-title">행성은 무엇을 말하는가</div>
+          <div class="kc-body">서양 점성술은 태어난 순간 <strong>태양·달·수성·금성·화성·목성·토성</strong> 등 행성들이 하늘 어느 위치에 있었는지를 기록한다. 각 행성은 삶의 영역을 상징한다. <strong>목성(Jupiter)</strong>은 확장·기회, <strong>토성(Saturn)</strong>은 제약·성숙, <strong>명왕성(Pluto)</strong>은 근본적 변화를 뜻한다.</div>
+          <div class="kc-pills">
+            <span class="kc-pill">☉ 태양 — 자아·목적</span>
+            <span class="kc-pill">♃ 목성 — 기회·확장</span>
+            <span class="kc-pill">♄ 토성 — 제약·성숙</span>
+            <span class="kc-pill">♇ 명왕성 — 변혁</span>
+          </div>
+          <div class="kc-point"><p>목성이 내 태양궁을 통과하는 해는 12년에 한 번 오는 확장의 기회다. 이 타이밍을 아는 것만으로도 전략이 달라진다.</p></div>
+        </div>
+
+        <!-- 카드 5: 상승궁과 트랜짓 -->
+        <div class="know-card c-astro">
+          <div class="kc-icon">🌅</div>
+          <div class="kc-system">Western Astrology · 상승궁과 트랜짓</div>
+          <div class="kc-title">태어날 때 지평선에 뜬 별자리</div>
+          <div class="kc-body"><strong>상승궁(Ascendant)</strong>은 태어난 순간 동쪽 지평선에 떠오르던 별자리로, 겉으로 드러나는 성격과 타인에게 보이는 모습을 결정한다. <strong>트랜짓(Transit)</strong>은 현재 행성들이 내 출생 차트와 어떤 각도를 이루는지 보는 것으로, 지금 어떤 에너지가 작동 중인지 알 수 있다.</div>
+          <div class="kc-pills">
+            <span class="kc-pill">상승궁 — 겉모습</span>
+            <span class="kc-pill">태양궁 — 본질</span>
+            <span class="kc-pill">트랜짓 — 현재 흐름</span>
+            <span class="kc-pill">하우스 — 삶의 영역</span>
+          </div>
+          <div class="kc-point"><p>출생 시간이 정확할수록 상승궁 계산이 정밀해지고, 분석의 정확도가 높아진다.</p></div>
+        </div>
+
+        <!-- 카드 6: 수비학 -->
+        <div class="know-card c-subi">
+          <div class="kc-icon">🔢</div>
+          <div class="kc-system">Numerology · 수비학</div>
+          <div class="kc-title">숫자에 담긴 에너지 패턴</div>
+          <div class="kc-body">수비학은 생년월일의 숫자를 더해 <strong>생명수(Life Path Number)</strong>를 구하고, 그 숫자가 지닌 에너지 특성으로 인생 패턴을 읽는다. 또한 현재 연도를 더해 <strong>개인년수(Personal Year)</strong>를 계산하면 올해 어떤 에너지 사이클인지 알 수 있다.</div>
+          <div class="kc-pills">
+            <span class="kc-pill">1 — 리더십·시작</span>
+            <span class="kc-pill">3 — 창의·표현</span>
+            <span class="kc-pill">6 — 관계·책임</span>
+            <span class="kc-pill">8 — 금전·권력</span>
+            <span class="kc-pill">9 — 완성·지혜</span>
+          </div>
+          <div class="kc-point"><p>개인년수 8년은 금전 수확의 해, 1년은 새 출발의 해. 9년 사이클이 끝없이 반복되며 삶의 리듬을 만든다.</p></div>
+        </div>
+
+        <!-- 카드 7: 세 시스템 통합 -->
+        <div class="know-card c-combo">
+          <div class="kc-icon">🔭</div>
+          <div class="kc-system">통합 분석 · 책사의 방법론</div>
+          <div class="kc-title">왜 세 시스템을 함께 보는가</div>
+          <div class="kc-body">사주는 <strong>동양의 시간 에너지</strong>, 점성술은 <strong>행성의 우주 에너지</strong>, 수비학은 <strong>수학적 진동 패턴</strong>을 본다. 세 시스템이 같은 시기를 황금기로 가리킬 때 그 신뢰도는 훨씬 높아진다. 하나만 좋다면 잠재적 기회, 셋 모두 좋다면 진짜 황금기다.</div>
+          <div class="kc-pills">
+            <span class="kc-pill">사주 — 타이밍</span>
+            <span class="kc-pill">점성술 — 에너지</span>
+            <span class="kc-pill">수비학 — 사이클</span>
+            <span class="kc-pill">교차검증</span>
+          </div>
+          <div class="kc-point"><p>책사는 세 시스템이 공통으로 가리키는 지점만 믿는다. 하나만의 신호는 반만 믿는다.</p></div>
+        </div>
+
+      </div><!-- /know-track -->
+    </div><!-- /know-slider -->
+
+    <div class="know-nav">
+      <button class="know-nav-btn" id="kprev" onclick="slideKnow(-1)" disabled>← 이전</button>
+      <span class="know-progress" id="kprogress">1 / 7</span>
+      <button class="know-nav-btn" id="knext" onclick="slideKnow(1)">다음 →</button>
+    </div>
+  </div><!-- /know-wrap -->
+</div>
+
+<!-- ══ RESULT ══ -->
+<div id="s-result" class="screen">
+  <div class="result-scroll">
+    <div class="result-head">
+      <div class="res-name" id="rname">—</div>
+      <h2 class="res-title">책사의 분석 결과</h2>
+      <div class="divg"></div>
+      <div class="res-meta" id="rmeta">—</div>
+    </div>
+
+    <!-- 요약 배너 (AI 결과 후 채워짐) -->
+    <div class="summary-banner" id="sum-banner" style="display:none;">
+      <div class="banner-label">핵심 요약</div>
+      <div class="banner-scores" id="sum-scores"></div>
+      <div class="banner-oneliner" id="sum-oneliner">—</div>
+    </div>
+
+    <!-- 2026 최종전략 고정 카드 -->
+    <div style="background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.35);border-radius:3px;padding:20px 18px;margin-bottom:16px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold-d),var(--gold),var(--gold-d));"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold-d);text-transform:uppercase;margin-bottom:12px;">🎯 2026년 책사의 작전 명령</div>
+      <div style="display:grid;gap:10px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="flex-shrink:0;width:24px;height:24px;background:rgba(106,159,192,0.2);border:1px solid #6a9fc0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:9px;color:#6a9fc0;font-weight:700;">1</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">1분기 (1~3월) — 설계하라 ⚙️</div>
+            <div style="font-size:11px;color:var(--td);line-height:1.7;font-weight:300;">움직이지 말고 2027년까지 로드맵을 문서로 만들어라. 청사진 없이 나가면 2분기 기회를 그냥 지나친다.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="flex-shrink:0;width:24px;height:24px;background:rgba(201,168,76,0.2);border:1px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);font-weight:700;">2</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">2분기 (4~6월) — 하나만 골라라 🏹</div>
+            <div style="font-size:11px;color:var(--td);line-height:1.7;font-weight:300;">기회가 여러 개 온다. 전부 잡으려 하면 전부 놓친다. 6월 9일 전후에 가장 중요한 패를 꺼내라.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="flex-shrink:0;width:24px;height:24px;background:rgba(224,92,92,0.2);border:1px solid var(--danger);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--danger);font-weight:700;">3</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">3분기 (7~9월) — 버텨라 🛡</div>
+            <div style="font-size:11px;color:var(--td);line-height:1.7;font-weight:300;">2026년 최대 위기 구간. 이기려 하지 말고 소진되지 마라. 건강·관계·재무 세 가지만 지키면 된다.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="flex-shrink:0;width:24px;height:24px;background:rgba(76,175,130,0.2);border:1px solid var(--safe);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--safe);font-weight:700;">4</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">4분기 (10~12월) — 정비하라 🔧</div>
+            <div style="font-size:11px;color:var(--td);line-height:1.7;font-weight:300;">2027년 황금기를 위한 마지막 포지셔닝. 함께할 사람을 확정하고 2027년 첫 수를 배치하라.</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:12px 14px;background:rgba(0,0,0,0.3);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;">
+        <div style="font-size:12px;color:var(--gold-l);font-style:italic;line-height:1.7;">황금기는 2027년에 온다. 2026년은 수확이 아니라 <strong style="color:var(--gold);">포지셔닝</strong>의 해다. 지금 어디에 서 있느냐가 2027년을 결정한다.</div>
+      </div>
+    </div>
+
+    <div class="tab-bar" id="tbar"></div>
+    <div id="tpanes"></div>
+    <div class="res-err" id="rerr"></div>
+    <button class="btn-reset" onclick="resetApp()">← 다시 분석하기</button>
+  </div>
+</div>
+
+<script>
+let MODE='solo', MARITAL='미혼', DATA={};
+const API_KEY='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';
+const PIN_CORRECT='6604';
+let apiUnlocked=false;
+
+function checkPin(val){
+  const msg=document.getElementById('pin-msg');
+  if(val.length<4) {
+    msg.textContent='';
+    msg.style.color='var(--tm)';
+    apiUnlocked=false;
+    return;
+  }
+  if(val===PIN_CORRECT){
+    apiUnlocked=true;
+    msg.textContent='✓ 활성화됨';
+    msg.style.color='var(--safe)';
+    document.getElementById('pin-input').style.borderColor='var(--safe)';
+  } else {
+    apiUnlocked=false;
+    msg.textContent='✗ 비밀번호가 틀렸습니다';
+    msg.style.color='var(--danger)';
+    document.getElementById('pin-input').style.borderColor='var(--danger)';
+    setTimeout(()=>{
+      document.getElementById('pin-input').value='';
+      document.getElementById('pin-input').style.borderColor='var(--border)';
+      msg.textContent='';
+    },1000);
+  }
+}
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='s-load') initKnow();
+}
+
+// ── 지식 카드 슬라이더 ──
+let kIdx=0, kTotal=7, kAutoTimer=null;
+
+function initKnow(){
+  kIdx=0;
+  // 도트 생성
+  const dots=document.getElementById('kdots');
+  dots.innerHTML='';
+  for(let i=0;i<kTotal;i++){
+    const d=document.createElement('div');
+    d.className='know-dot'+(i===0?' active':'');
+    d.onclick=()=>goKnow(i);
+    dots.appendChild(d);
+  }
+  updateKnow();
+  // 자동 슬라이드 5초마다
+  clearInterval(kAutoTimer);
+  kAutoTimer=setInterval(()=>slideKnow(1),5000);
+}
+
+function slideKnow(dir){
+  const next=kIdx+dir;
+  if(next<0||next>=kTotal) return;
+  goKnow(next);
+}
+
+function goKnow(i){
+  kIdx=i;
+  updateKnow();
+}
+
+function updateKnow(){
+  const track=document.getElementById('ktrack');
+  if(track) track.style.transform=`translateX(-${kIdx*100}%)`;
+  // 도트
+  document.querySelectorAll('.know-dot').forEach((d,i)=>d.classList.toggle('active',i===kIdx));
+  // 버튼
+  const prev=document.getElementById('kprev');
+  const next=document.getElementById('knext');
+  const prog=document.getElementById('kprogress');
+  if(prev) prev.disabled=kIdx===0;
+  if(next) next.disabled=kIdx===kTotal-1;
+  if(prog) prog.textContent=`${kIdx+1} / ${kTotal}`;
+}
+
+function setMode(m,btn){
+  MODE=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('pw').classList.toggle('on',m==='couple');
+}
+
+function setMarital(v,btn){
+  MARITAL=v;
+  document.querySelectorAll('.marital-btn').forEach(b=>{b.classList.remove('active');});
+  btn.classList.add('active');
+}
+
+// ── 사주 계산 ──
+function saju(bd,bt){
+  const d=new Date(bd),y=d.getFullYear(),mo=d.getMonth()+1;
+  const CG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  const JJ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  const yCG=CG[(y-4)%10],yJJ=JJ[(y-4)%12];
+  const mIdx=((Math.floor((y-4)%10/2)*2+mo)%10);
+  const mCG=CG[mIdx],mJJ=JJ[(mo+1)%12];
+  const base=new Date(1900,0,1),diff=Math.floor((d-base)/86400000);
+  const dCG=CG[(diff+40)%10],dJJ=JJ[(diff+40)%12];
+  let hCG='—',hJJ='—';
+  if(bt){const h=parseInt(bt.split(':')[0]),ti=Math.floor((h+1)/2)%12,hb=((diff+40)%10%5)*2;hCG=CG[(hb+ti)%10];hJJ=JJ[ti];}
+  return{year:yCG+yJJ,month:mCG+mJJ,day:dCG+dJJ,hour:hCG+hJJ,ilgan:dCG};
+}
+
+function lifePath(bd){
+  let s=bd.replace(/-/g,'').split('').map(Number).reduce((a,b)=>a+b,0);
+  while(s>9&&s!==11&&s!==22)s=s.toString().split('').map(Number).reduce((a,b)=>a+b,0);
+  return s;
+}
+
+function personalYear(bd,yr){
+  const d=new Date(bd),mo=d.getMonth()+1,day=d.getDate();
+  const ys=yr.toString().split('').map(Number).reduce((a,b)=>a+b,0);
+  let s=mo+day+ys;while(s>9)s=s.toString().split('').map(Number).reduce((a,b)=>a+b,0);
+  return s;
+}
+
+function sunSign(bd){
+  const d=new Date(bd),m=d.getMonth()+1,day=d.getDate();
+  const signs=[{n:'염소자리 ♑',e:[1,19]},{n:'물병자리 ♒',e:[2,18]},{n:'물고기자리 ♓',e:[3,20]},{n:'양자리 ♈',e:[4,19]},{n:'황소자리 ♉',e:[5,20]},{n:'쌍둥이자리 ♊',e:[6,20]},{n:'게자리 ♋',e:[7,22]},{n:'사자자리 ♌',e:[8,22]},{n:'처녀자리 ♍',e:[9,22]},{n:'천칭자리 ♎',e:[10,22]},{n:'전갈자리 ♏',e:[11,21]},{n:'궁수자리 ♐',e:[12,21]},{n:'염소자리 ♑',e:[12,31]}];
+  for(const s of signs)if(m<s.e[0]||(m===s.e[0]&&day<=s.e[1]))return s.n;
+  return '염소자리 ♑';
+}
+
+function calcSeasons(bd,peakYear){
+  const by=new Date(bd).getFullYear();
+  const as=peakYear,ss=as-12,sps=as-24,ws=as+12,we=as+24;
+  return[
+    {name:'봄',icon:'🌸',cls:'season-spring',start:sps,end:ss-1,keyword:'뿌리 내리기 · 가능성의 씨앗',desc:'에너지가 자라는 시기. 방향을 잡고 실력을 쌓는다. 이 시기가 황금기의 토대가 된다.'},
+    {name:'여름',icon:'☀️',cls:'season-summer',start:ss,end:as-1,keyword:'성장 · 도전 · 열기',desc:'뜨겁게 올라가는 시기. 시행착오가 많지만 에너지 절정. 황금기 직전 마지막 준비 구간.'},
+    {name:'가을',icon:'🍂',cls:'season-autumn',start:as,end:ws-1,keyword:'수확 · 황금기 · 정점',desc:'인생의 절정. 심은 것을 거두는 시기. 커리어·금전·명예가 정점에 달한다.'},
+    {name:'겨울',icon:'❄️',cls:'season-winter',start:ws,end:we,keyword:'레거시 · 영향력 · 완성',desc:'몸으로 뛰지 않고 쌓은 것으로 영향력을 발휘하는 시기. 지식·관계가 자산이 된다.'}
+  ];
+}
+
+function lifeScores(bd){
+  const by=new Date(bd).getFullYear();
+  return[
+    {label:'20대',years:`${by+20}–${by+29}`,saju:62,astro:58,subi:70},
+    {label:'30대전반',years:`${by+30}–${by+34}`,saju:70,astro:68,subi:72},
+    {label:'30대후반',years:`${by+35}–${by+39}`,saju:78,astro:74,subi:76},
+    {label:'40대초반',years:`${by+40}–${by+44}`,saju:95,astro:90,subi:90},
+    {label:'40대후반',years:`${by+45}–${by+49}`,saju:92,astro:85,subi:87},
+    {label:'50대초반',years:`${by+50}–${by+54}`,saju:85,astro:80,subi:80},
+    {label:'50대후반',years:`${by+55}–${by+59}`,saju:72,astro:68,subi:70},
+    {label:'60대',years:`${by+60}–${by+69}`,saju:78,astro:73,subi:75}
+  ];
+}
+
+const Q_DATA=[
+  {q:'1Q',months:'1–3월',score:28,mode:'⚙️ 설계 모드',color:'#6a9fc0',tip:'조급하게 움직이지 마라. 연간 전략 문서화가 유일한 임무.'},
+  {q:'2Q',months:'4–6월',score:78,mode:'🏹 공격 모드',color:'#c9a84c',tip:'2026년 황금 구간. 6월 9일 전후 가장 중요한 승부를 걸어라.'},
+  {q:'3Q',months:'7–9월',score:-45,mode:'🛡 생존 모드',color:'#e05c5c',tip:'이기려 하지 마라. 소진되지 않고 버티는 것이 승리다.'},
+  {q:'4Q',months:'10–12월',score:43,mode:'🔧 정비 모드',color:'#4caf82',tip:'2027년 황금기를 위한 마지막 포지셔닝. 함께할 사람을 확정하라.'}
+];
+
+// ── 분석 시작 ──
+async function startAnalysis(){
+  const b1=document.getElementById('b1').value;
+  const errEl=document.getElementById('ferr');
+  errEl.style.display='none';
+  if(!apiUnlocked){errEl.textContent='비밀번호를 먼저 입력해주세요.';errEl.style.display='block';return;}
+  if(!b1){errEl.textContent='생년월일을 입력해주세요.';errEl.style.display='block';return;}
+  if(MODE==='couple'&&!document.getElementById('b2').value){errEl.textContent='파트너 생년월일을 입력해주세요.';errEl.style.display='block';return;}
+
+  const n1=document.getElementById('n1').value||'의뢰인';
+  const t1=document.getElementById('t1').value;
+  const p1=document.getElementById('p1').value||'미상';
+  const gender1=document.getElementById('g1').value;
+  const focus=document.getElementById('focus').value;
+  const s1=saju(b1,t1),lp1=lifePath(b1),py1=personalYear(b1,2026),ss1=sunSign(b1);
+  const peakYear=new Date(b1).getFullYear()+40;
+
+  DATA={n1,b1,t1,p1,gender1,s1,lp1,py1,ss1,peakYear,apiKey:API_KEY,mode:MODE,marital:MARITAL,focus};
+
+  // 프롬프트 구성
+  const d=new Date(b1),bs=`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일${t1?' '+t1:''}`;
+
+  const maritalContext = MARITAL==='기혼'
+    ? `이 사람은 기혼자입니다. 금전운과 가족운(배우자와의 운세 흐름, 가정 안정, 자녀운)을 커리어와 연결해서 분석해주세요. 연애·결혼 가능성 분석은 생략합니다.`
+    : `이 사람은 미혼자입니다. 결혼운(언제 좋은 인연이 오는지, 어떤 상대가 맞는지, 2026년 이성운)을 커리어와 함께 분석해주세요.`;
+
+  let prompt='';
+  if(MODE==='solo'){
+    prompt=`당신은 사주, 서양 점성술, 수비학에 정통한 냉철한 책사(제갈량)입니다.
+좋은 말만 하지 않습니다. 날카롭고 솔직하게 분석합니다.
+
+[의뢰인]
+- 이름: ${n1} (${gender1}, ${MARITAL})
+- 생년월일시: ${bs}
+- 출생지: ${p1}
+- 사주: 연주 ${s1.year} / 월주 ${s1.month} / 일주 ${s1.day} / 시주 ${s1.hour}
+- 일간: ${s1.ilgan}
+- 태양궁: ${ss1}
+- 생명수: ${lp1}
+- 2026 개인년수: ${py1}
+- 집중 분석: ${focus}
+- ${maritalContext}
+
+아래 6개 섹션으로 분석하세요. 각 섹션은 ### 번호. 제목 형식으로:
+
+### 1. 핵심 요약
+사주/점성술/수비학 점수를 각각 0-100으로 표에 제시. 2026년 종합 점수 1개. 이 사람의 운세를 한 줄로 요약(30자 이내). 키워드 3개.
+
+### 2. 커리어 황금기 TOP5
+20~60대 연도 명시. 각 시기 사주·점성술·수비학 근거와 점수. 금전 중심으로.
+
+### 3. 2026년 분기별 전략
+1~4분기 각각: 운세 흐름, 공격/방어 판단, 구체적 행동 전략 2가지. 가장 중요한 날짜 1개와 그날 준비사항.
+
+### 4. ${MARITAL==='기혼' ? '금전·가족운' : '결혼·이성운'}
+${MARITAL==='기혼'
+  ? '2026년 금전운 흐름(월별 수입·지출 주의 구간). 배우자와의 관계 흐름. 가정 안정을 위한 핵심 전략 3가지.'
+  : '결혼 적합 시기(연도 명시). 어떤 유형의 상대가 맞는지(사주·점성술 기반). 2026년 이성운 흐름과 주의 시기.'}
+
+### 5. 한계와 극복
+이 사주 구조상 운을 1000% 활용 못 하는 패턴 3가지. 반드시 만나야 할 사람 유형. 반드시 배워야 할 것 2가지.
+
+### 6. 책사의 최종 전략
+2027~2029년 황금기를 향한 2026년 핵심 작전 3가지. 반드시 극복해야 할 위기 1개. 책사의 한 줄 최종 진단.
+
+각 섹션은 구체적이고 날카롭게. 연도와 숫자를 명시하라.`;
+  } else {
+    const n2=document.getElementById('n2').value||'파트너';
+    const b2=document.getElementById('b2').value;
+    const t2=document.getElementById('t2').value;
+    const p2=document.getElementById('p2').value||'미상';
+    const gender2=document.getElementById('g2').value;
+    const s2=saju(b2,t2),lp2=lifePath(b2),ss2=sunSign(b2);
+    const d2=new Date(b2),bs2=`${d2.getFullYear()}년 ${d2.getMonth()+1}월 ${d2.getDate()}일${t2?' '+t2:''}`;
+    DATA.n2=n2;
+    prompt=`당신은 사주, 서양 점성술, 수비학에 정통한 냉철한 책사입니다.
+
+[첫 번째] ${n1}(${gender1},${MARITAL}) / ${bs} / ${p1}
+사주: ${s1.year} ${s1.month} ${s1.day} ${s1.hour} / 일간:${s1.ilgan} / ${ss1} / 생명수:${lp1}
+
+[두 번째] ${n2}(${gender2}) / ${bs2} / ${p2}
+사주: ${s2.year} ${s2.month} ${s2.day} ${s2.hour} / 일간:${s2.ilgan} / ${ss2} / 생명수:${lp2}
+
+아래 6개 섹션으로 궁합 분석:
+
+### 1. 핵심 요약
+사주/점성술/수비학 궁합 점수 표. 종합 점수. 이 관계의 본질 한 줄(30자 이내).
+
+### 2. 사주 궁합
+천간합충, 지지 관계. 강점·약점 핵심. 커리어·금전에 미치는 영향.
+
+### 3. 점성술 궁합
+두 태양궁 상성. 2026년 함께하면 생기는 시너지와 마찰.
+
+### 4. ${MARITAL==='기혼' ? '금전·가족운' : '결혼·미래운'}
+${MARITAL==='기혼'
+  ? '두 사람의 재물운 결합 시 시너지와 리스크. 2026년 가정 안정 흐름. 함께 극복해야 할 재정 위기.'
+  : '결혼 적합도와 시기. 두 사람이 함께하면 생기는 장기적 흐름. 주의해야 할 관계 패턴.'}
+
+### 5. 2026 파트너 전략
+분기별 함께 치고 나가야 할 때와 서로를 지켜야 할 때. 가장 위험한 시기와 대처법.
+
+### 6. 책사의 최종 진단
+두 사람의 황금기를 극대화하는 핵심 전략 3가지. 반드시 피해야 할 패턴. 한 줄 최종 진단.`;
+  }
+
+  DATA.prompt=prompt;
+  goTo('s-load');
+  await runAPI();
+}
+
+// ── API 호출 ──
+async function runAPI(){
+  const msgs=['사주 팔자 계산 중...','천간지지 분석 중...','점성술 행성 위치 계산 중...','수비학 사이클 분석 중...','2026년 운세 흐름 분석 중...','책사가 전략을 수립하고 있습니다...','최종 진단 작성 중...'];
+  let mi=0;
+  const si=setInterval(()=>{document.getElementById('lstatus').textContent=msgs[mi++%msgs.length];},2000);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':DATA.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:DATA.prompt}]})
+    });
+    clearInterval(si);
+    clearInterval(kAutoTimer);
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`오류 ${res.status}`);}
+    const json=await res.json();
+    const text=json.content.find(c=>c.type==='text')?.text||'';
+    renderResult(text);
+    goTo('s-result');
+  }catch(e){
+    clearInterval(si);
+    clearInterval(kAutoTimer);
+    goTo('s-result');
+    const el=document.getElementById('rerr');
+    el.textContent='분석 오류: '+e.message;
+    el.style.display='block';
+  }
+}
+
+// ── 결과 렌더링 ──
+function renderResult(text){
+  const d=new Date(DATA.b1);
+  const bs=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  const maritalIcon=DATA.marital==='기혼'?'💗':'💙';
+  document.getElementById('rname').textContent=DATA.n1+(DATA.n2?' × '+DATA.n2:'');
+  document.getElementById('rmeta').textContent=`${bs} · ${DATA.ss1} · 생명수 ${DATA.lp1} · ${maritalIcon} ${DATA.marital}`;
+
+  // AI 섹션 파싱
+  const sections=text.split(/###\s+\d+\.\s+/).filter(s=>s.trim());
+
+  // 요약 배너 채우기 (섹션 1 파싱)
+  if(sections[0]){
+    const s0=sections[0];
+    // 점수 추출 시도
+    const scoreMatches=[...s0.matchAll(/(\d{2,3})\s*점?/g)].map(m=>parseInt(m[1])).filter(n=>n<=100&&n>=30);
+    const scores=scoreMatches.slice(0,3);
+    const labels=['사주','점성술','수비학'];
+    const colors=['#c9a84c','#8b6fba','#4caf82'];
+    if(scores.length>=2){
+      document.getElementById('sum-scores').innerHTML=scores.slice(0,3).map((s,i)=>`
+        <div class="bscore">
+          <div class="bscore-num" style="color:${colors[i]}">${s}</div>
+          <div class="bscore-label">${labels[i]}</div>
+        </div>`).join('');
+      document.getElementById('sum-banner').style.display='block';
+    }
+    // 한 줄 요약 추출
+    const lineMatch=s0.match(/한\s*줄[^:：\n]*[:：]\s*(.+)/);
+    const keywordMatch=s0.match(/키워드[^:：\n]*[:：]\s*(.+)/);
+    const oneliner=lineMatch?lineMatch[1].trim():(keywordMatch?keywordMatch[1].trim():'분석 결과를 확인하세요.');
+    document.getElementById('sum-oneliner').textContent=oneliner;
+    document.getElementById('sum-banner').style.display='block';
+  }
+
+  // 탭 구성
+  const maritalTabName = DATA.marital==='기혼' ? '💰 금전·가족' : '💕 결혼·이성';
+  const aiTabNames = DATA.mode==='solo'
+    ? ['📊 운세 요약','🏆 황금기','📅 2026 전략', maritalTabName,'⚠️ 한계·극복','🎯 최종 전략']
+    : ['📊 궁합 요약','☯️ 사주 궁합','⭐ 점성술', maritalTabName,'📅 2026 전략','🎯 최종 진단'];
+
+  const fixedTabs=['📈 생애 그래프','🌸 사계절','📉 분기 매트릭스'];
+  const allTabs=[...fixedTabs,...aiTabNames];
+
+  const tbar=document.getElementById('tbar');
+  const tpanes=document.getElementById('tpanes');
+  tbar.innerHTML='';tpanes.innerHTML='';
+
+  allTabs.forEach((name,i)=>{
+    const btn=document.createElement('button');
+    btn.className='tab-btn'+(i===0?' active':'');
+    btn.textContent=name;
+    btn.onclick=()=>switchTab(i);
+    tbar.appendChild(btn);
+
+    const pane=document.createElement('div');
+    pane.className='tab-pane'+(i===0?' active':'');
+    pane.id='tp'+i;
+
+    if(i===0) pane.innerHTML=buildLifeChart();
+    else if(i===1) pane.innerHTML=buildSeasons();
+    else if(i===2) pane.innerHTML=buildMatrix();
+    else{
+      const aiIdx=i-3;
+      const sec=sections[aiIdx]||'';
+
+      // 결혼/금전 탭에 전용 카드 적용
+      if(aiIdx===3){
+        const cardClass=DATA.marital==='기혼'?'family-card':'love-card';
+        const cardLabel=DATA.marital==='기혼'?'family-label':'love-label';
+        const cardIcon=DATA.marital==='기혼'?'💰 금전·가족운 분석':'💕 결혼·이성운 분석';
+        const extra=document.createElement('div');
+        extra.className=cardClass;
+        extra.innerHTML=`<div class="${cardLabel}">${cardIcon}</div>`+md2html(sec);
+        pane.appendChild(extra);
+      } else {
+        const card=document.createElement('div');
+        card.className='rcard';
+        card.innerHTML=md2html(sec);
+        pane.appendChild(card);
+      }
+    }
+    tpanes.appendChild(pane);
+  });
+
+  requestAnimationFrame(()=>{drawLifeChart();drawMatrix();});
+}
+
+// ── 차트 빌더 ──
+function buildLifeChart(){
+  const scores=lifeScores(DATA.b1);
+  return `<div class="rcard">
+    <h2>생애 커리어 운세 점수</h2>
+    <p style="font-size:11px;color:var(--tm);margin-bottom:10px;">사주 · 점성술 · 수비학 3개 시스템 종합</p>
+    <div class="chart-wrap" style="margin-bottom:16px;"><canvas id="cvLife" style="height:340px;"></canvas></div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:#c9a84c;">● 사주</span>
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:#8b6fba;">● 점성술</span>
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:#4caf82;">● 수비학</span>
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.3);">― 평균</span>
+    </div>
+    ${scores.map(s=>{
+      const avg=Math.round((s.saju+s.astro+s.subi)/3);
+      const isPeak=avg>=88;
+      return `<div style="display:grid;grid-template-columns:64px 1fr 34px;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(28,28,42,.5);">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--tm);text-align:right;">${s.label}<br><span style="font-size:7px;color:var(--gold-d);">${s.years}</span></div>
+        <div style="height:5px;background:var(--border);border-radius:2px;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${avg}%;background:${isPeak?'var(--gold)':'rgba(106,159,192,.5)'};border-radius:2px;"></div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:${isPeak?'var(--gold)':'var(--td)'};text-align:right;">${avg}${isPeak?' ★':''}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function buildSeasons(){
+  const seasons=calcSeasons(DATA.b1,DATA.peakYear);
+  const by=new Date(DATA.b1).getFullYear();
+  return `<div class="rcard">
+    <h2>인생 사계절 (12년 단위)</h2>
+    <p style="font-size:11px;color:var(--tm);margin-bottom:12px;">황금기(가을)를 기준으로 역산한 당신의 사계절</p>
+    <div class="season-grid">
+      ${seasons.map(s=>`<div class="season-card ${s.cls}">
+        <div class="s-icon">${s.icon}</div>
+        <div class="s-name">${s.name}</div>
+        <div class="s-years">${s.start}–${s.end}</div>
+        <div class="s-age">만 ${s.start-by}~${s.end-by}세</div>
+        <div style="font-size:9px;opacity:.7;margin-bottom:5px;font-family:'DM Mono',monospace;">${s.keyword}</div>
+        <div class="s-desc">${s.desc}</div>
+      </div>`).join('')}
+    </div>
+    <blockquote><p>황금기는 저절로 오지 않는다. 봄에 심고 여름에 자라야 가을에 거둔다.</p></blockquote>
+  </div>`;
+}
+
+function buildMatrix(){
+  const qCards=Q_DATA.map((q,i)=>`<div class="q-card q${i+1}">
+    <div class="q-label">${q.q} · ${q.months}</div>
+    <div class="q-score">${q.score>0?'+':''}${q.score}</div>
+    <div class="q-mode">${q.mode}</div>
+    <div class="q-tip">${q.tip}</div>
+  </div>`).join('');
+  return `<div class="rcard">
+    <h2>2026년 위기-기회 매트릭스</h2>
+    <p style="font-size:11px;color:var(--tm);margin-bottom:10px;">공격할 때 vs 버텨야 할 때 — 한눈에 보기</p>
+    <div class="chart-wrap" style="margin-bottom:16px;"><canvas id="cvMatrix" style="height:300px;"></canvas></div>
+    <div class="quarter-grid">${qCards}</div>
+  </div>`;
+}
+
+function drawLifeChart(){
+  const cv=document.getElementById('cvLife');if(!cv)return;
+  const scores=lifeScores(DATA.b1);
+  const ctx=cv.getContext('2d');
+  const dpr=window.devicePixelRatio||2;
+  const W=cv.offsetWidth*dpr,H=340*dpr;
+  cv.width=W;cv.height=H;cv.style.height='340px';
+  ctx.scale(dpr,dpr);
+  const w=cv.offsetWidth,h=340;
+  const pad={l:36,r:16,t:24,b:56};
+  const gw=w-pad.l-pad.r,gh=h-pad.t-pad.b,n=scores.length,bw=gw/n;
+
+  // 배경
+  ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,w,h);
+
+  // 황금기 구간 하이라이트
+  const peakStart=3,peakEnd=5;
+  const px=pad.l+bw*peakStart,pw=bw*(peakEnd-peakStart+1);
+  ctx.fillStyle='rgba(201,168,76,0.07)';
+  ctx.fillRect(px,pad.t,pw,gh);
+
+  // 그리드
+  [0,25,50,75,100].forEach(v=>{
+    const y=pad.t+gh*(1-v/100);
+    ctx.strokeStyle=v===50?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)';
+    ctx.lineWidth=v===50?1:0.5;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+gw,y);ctx.stroke();
+    ctx.fillStyle=v===100?'rgba(201,168,76,0.7)':'rgba(255,255,255,0.35)';
+    ctx.font='bold 9px DM Mono';ctx.textAlign='right';
+    ctx.fillText(v,pad.l-6,y+3);
+  });
+
+  // 세 라인 (사주, 점성술, 수비학)
+  const series=[['saju','#c9a84c'],['astro','#8b6fba'],['subi','#4caf82']];
+  series.forEach(([k,c])=>{
+    ctx.beginPath();
+    scores.forEach((s,i)=>{
+      const x=pad.l+bw*i+bw/2,y=pad.t+gh*(1-s[k]/100);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle=c;ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+    scores.forEach((s,i)=>{
+      const x=pad.l+bw*i+bw/2,y=pad.t+gh*(1-s[k]/100);
+      ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);
+      ctx.fillStyle=c;ctx.fill();
+      ctx.strokeStyle='#0a0a14';ctx.lineWidth=1.5;ctx.stroke();
+    });
+  });
+
+  // 평균선 (굵게)
+  ctx.beginPath();
+  scores.forEach((s,i)=>{
+    const avg=(s.saju+s.astro+s.subi)/3;
+    const x=pad.l+bw*i+bw/2,y=pad.t+gh*(1-avg/100);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=2.5;
+  ctx.setLineDash([5,4]);ctx.stroke();ctx.setLineDash([]);
+
+  // X축 레이블 + 점수
+  scores.forEach((s,i)=>{
+    const x=pad.l+bw*i+bw/2;
+    const avg=Math.round((s.saju+s.astro+s.subi)/3);
+    const isPeak=avg>=88;
+
+    // 레이블
+    ctx.fillStyle=isPeak?'rgba(201,168,76,0.9)':'rgba(255,255,255,0.45)';
+    ctx.font=`${isPeak?'bold ':''  }10px DM Mono`;ctx.textAlign='center';
+    ctx.fillText(s.label,x,h-pad.b+16);
+
+    // 점수
+    ctx.fillStyle=isPeak?'#c9a84c':'rgba(255,255,255,0.3)';
+    ctx.font=`bold 9px DM Mono`;
+    ctx.fillText(avg,x,h-pad.b+30);
+
+    // 황금기 별
+    if(isPeak){
+      ctx.fillStyle='#c9a84c';ctx.font='bold 11px DM Mono';
+      ctx.fillText('★',x,h-pad.b+44);
+    }
+  });
+
+  // 황금기 라벨
+  const labelX=pad.l+bw*peakStart+pw/2;
+  ctx.fillStyle='rgba(201,168,76,0.5)';
+  ctx.font='9px DM Mono';ctx.textAlign='center';
+  ctx.fillText('PEAK ZONE',labelX,pad.t-8);
+}
+
+function drawMatrix(){
+  const cv=document.getElementById('cvMatrix');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const dpr=window.devicePixelRatio||2;
+  const W=cv.offsetWidth*dpr,H=300*dpr;
+  cv.width=W;cv.height=H;cv.style.height='300px';
+  ctx.scale(dpr,dpr);
+  const w=cv.offsetWidth,h=300;
+  const pad={l:40,r:16,t:28,b:36};
+  const gw=w-pad.l-pad.r,gh=h-pad.t-pad.b;
+
+  // 배경
+  ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,w,h);
+
+  // 기회/위기 영역
+  const gy0=pad.t+gh/2;
+  // 기회 영역 (위)
+  const oppGrad=ctx.createLinearGradient(0,pad.t,0,gy0);
+  oppGrad.addColorStop(0,'rgba(76,175,130,0.15)');
+  oppGrad.addColorStop(1,'rgba(76,175,130,0.02)');
+  ctx.fillStyle=oppGrad;ctx.fillRect(pad.l,pad.t,gw,gh/2);
+
+  // 위기 영역 (아래)
+  const riskGrad=ctx.createLinearGradient(0,gy0,0,pad.t+gh);
+  riskGrad.addColorStop(0,'rgba(224,92,92,0.02)');
+  riskGrad.addColorStop(1,'rgba(224,92,92,0.15)');
+  ctx.fillStyle=riskGrad;ctx.fillRect(pad.l,gy0,gw,gh/2);
+
+  // 영역 레이블
+  ctx.fillStyle='rgba(76,175,130,0.4)';ctx.font='bold 9px DM Mono';ctx.textAlign='left';
+  ctx.fillText('▲ OPPORTUNITY',pad.l+6,pad.t+14);
+  ctx.fillStyle='rgba(224,92,92,0.4)';
+  ctx.fillText('▼ CRISIS',pad.l+6,pad.t+gh-6);
+
+  // Y축 그리드
+  [-100,-50,0,50,100].forEach(v=>{
+    const y=pad.t+gh*(1-(v+100)/200);
+    ctx.strokeStyle=v===0?'rgba(255,255,255,0.2)':'rgba(255,255,255,0.06)';
+    ctx.lineWidth=v===0?1.5:0.5;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+gw,y);ctx.stroke();
+    const label=v>0?'+'+v:String(v);
+    ctx.fillStyle=v>0?'rgba(76,175,130,0.8)':v<0?'rgba(224,92,92,0.8)':'rgba(255,255,255,0.5)';
+    ctx.font='bold 9px DM Mono';ctx.textAlign='right';
+    ctx.fillText(label,pad.l-6,y+3);
+  });
+
+  // 분기 구분선 + 레이블
+  const qColors=['#6a9fc0','#c9a84c','#e05c5c','#4caf82'];
+  const qNames=['1Q\n1-3월','2Q\n4-6월','3Q\n7-9월','4Q\n10-12월'];
+  [1,2,3].forEach(i=>{
+    const x=pad.l+gw*i/4;
+    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1;
+    ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+gh);ctx.stroke();ctx.setLineDash([]);
+  });
+
+  // 황금일 수직선
+  const gx=pad.l+gw*0.44;
+  ctx.strokeStyle='rgba(201,168,76,0.6)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(gx,pad.t);ctx.lineTo(gx,pad.t+gh);ctx.stroke();ctx.setLineDash([]);
+  // 황금일 레이블 배경
+  ctx.fillStyle='rgba(201,168,76,0.15)';ctx.fillRect(gx-14,pad.t-1,28,14);
+  ctx.fillStyle='#c9a84c';ctx.font='bold 8px DM Mono';ctx.textAlign='center';
+  ctx.fillText('6/9 ★',gx,pad.t+9);
+
+  // 커브 포인트
+  const pts=[
+    {x:0,y:20},{x:.08,y:25},{x:.15,y:32},{x:.22,y:26},
+    {x:.28,y:35},{x:.36,y:78},{x:.44,y:74},{x:.50,y:62},
+    {x:.55,y:25},{x:.62,y:-38},{x:.68,y:-45},
+    {x:.73,y:-35},{x:.78,y:-15},{x:.84,y:28},
+    {x:.90,y:43},{x:.96,y:42},{x:1,y:40}
+  ].map(p=>({x:pad.l+gw*p.x,y:pad.t+gh*(1-(p.y+100)/200)}));
+
+  // 커브 아래 채우기
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,gy0);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,gy0);
+  ctx.closePath();
+  ctx.fillStyle='rgba(201,168,76,0.06)';ctx.fill();
+
+  // 메인 커브
+  const lineGrad=ctx.createLinearGradient(pad.l,0,pad.l+gw,0);
+  lineGrad.addColorStop(0,'#6a9fc0');
+  lineGrad.addColorStop(0.33,'#c9a84c');
+  lineGrad.addColorStop(0.62,'#e05c5c');
+  lineGrad.addColorStop(1,'#4caf82');
+  ctx.beginPath();
+  pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=lineGrad;ctx.lineWidth=3;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
+
+  // 분기 핵심 포인트
+  const keyPts=[
+    {pt:pts[3],score:'+28',color:'#6a9fc0',above:true},
+    {pt:pts[5],score:'+78',color:'#c9a84c',above:true},
+    {pt:pts[10],score:'-45',color:'#e05c5c',above:false},
+    {pt:pts[14],score:'+43',color:'#4caf82',above:true}
+  ];
+  keyPts.forEach(({pt,score,color,above})=>{
+    // 글로우
+    ctx.beginPath();ctx.arc(pt.x,pt.y,9,0,Math.PI*2);
+    ctx.fillStyle=color.replace(')',',0.2)').replace('rgb','rgba');ctx.fill();
+    // 점
+    ctx.beginPath();ctx.arc(pt.x,pt.y,5,0,Math.PI*2);
+    ctx.fillStyle=color;ctx.fill();
+    ctx.strokeStyle='#0a0a14';ctx.lineWidth=2;ctx.stroke();
+    // 점수 레이블
+    ctx.fillStyle=color;ctx.font='bold 11px DM Mono';ctx.textAlign='center';
+    ctx.fillText(score,pt.x,above?pt.y-12:pt.y+20);
+  });
+
+  // X축 분기 레이블
+  ['1Q','2Q','3Q','4Q'].forEach((q,i)=>{
+    const x=pad.l+gw*(i+0.5)/4;
+    const months=['1-3월','4-6월','7-9월','10-12월'];
+    ctx.fillStyle=qColors[i];ctx.font='bold 10px DM Mono';ctx.textAlign='center';
+    ctx.fillText(q,x,h-pad.b+14);
+    ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='8px DM Mono';
+    ctx.fillText(months[i],x,h-pad.b+26);
+  });
+}
+
+function switchTab(i){
+  document.querySelectorAll('.tab-btn').forEach((b,j)=>b.classList.toggle('active',i===j));
+  document.querySelectorAll('.tab-pane').forEach((p,j)=>p.classList.toggle('active',i===j));
+  if(i===0)requestAnimationFrame(drawLifeChart);
+  if(i===2)requestAnimationFrame(drawMatrix);
+}
+
+function md2html(t){
+  return t
+    .replace(/^#### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^### (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/^> (.+)$/gm,'<blockquote><p>$1</p></blockquote>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^\| (.+) \|$/gm,m=>{const cells=m.split('|').filter(c=>c.trim());if(cells.every(c=>c.trim().match(/^[-:]+$/)))return '';return '<tr>'+cells.map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>';})
+    .replace(/(<tr>[\s\S]*?<\/tr>)+/g,m=>`<table>${m}</table>`)
+    .replace(/^[-*] (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)+/g,m=>`<ul>${m}</ul>`)
+    .replace(/\n\n+/g,'</p><p>')
+    .replace(/^(?!<[hultbpcr])(.+)$/gm,'<p>$1</p>')
+    .replace(/<p><\/p>/g,'')
+    .replace(/<p>(<[hultbpcr])/g,'$1')
+    .replace(/(<\/[^>]+>)<\/p>/g,'$1');
+}
+
+function resetApp(){
+  ['n1','b1','t1','p1','n2','b2','t2','p2','akey'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  MARITAL='미혼';
+  document.getElementById('mb-single').classList.add('active');
+  document.getElementById('mb-married').classList.remove('active');
+  document.getElementById('ferr').style.display='none';
+  document.getElementById('rerr').style.display='none';
+  goTo('s-intro');
+}
+</script>
+</body>
+</html>
